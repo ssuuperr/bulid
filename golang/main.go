@@ -517,8 +517,15 @@ func authenticateHTTPRequest(r *http.Request) (string, error) {
 	return "", errors.New("invalid API key")
 }
 
-// --- 主函数 ---
+// ADDED: A dedicated handler for health checks.
+// It does nothing but return a 200 OK status.
+func healthCheckHandler(w http.ResponseWriter, r *http.Request) {
+    w.WriteHeader(http.StatusOK)
+    w.Write([]byte("OK"))
+}
 
+
+// --- 主函数 ---
 func main() {
 	// --- ADDED: Dynamic Port Configuration ---
 	// 从环境变量 "PORT" 中获取端口。
@@ -530,6 +537,9 @@ func main() {
 	// 构造监听地址，格式为 ":<port>"
 	listenAddr := fmt.Sprintf(":%s", port)
 	// --- END of ADDED Code ---
+
+	// ADDED: Register the health check endpoint BEFORE the other handlers.
+	http.HandleFunc("/healthz", healthCheckHandler)
 
 	// WebSocket 路由
 	http.HandleFunc(wsPath, handleWebSocket)
