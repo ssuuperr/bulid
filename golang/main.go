@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt" // ADDED: Import the "fmt" package for string formatting
 	"io"
 	"log"
 	"net/http"
@@ -17,8 +18,8 @@ import (
 
 // --- Constants ---
 const (
-	wsPath              = "/v1/ws"
-	proxyListenAddr     = ":5345"
+	wsPath = "/v1/ws"
+	// MODIFIED: Removed proxyListenAddr from here, as it's no longer a constant.
 	wsReadTimeout       = 60 * time.Second
 	proxyRequestTimeout = 600 * time.Second
 )
@@ -519,17 +520,30 @@ func authenticateHTTPRequest(r *http.Request) (string, error) {
 // --- 主函数 ---
 
 func main() {
+	// --- ADDED: Dynamic Port Configuration ---
+	// 从环境变量 "PORT" 中获取端口。
+	port := os.Getenv("PORT")
+	// 如果环境变量未设置（例如在本地运行时），则使用 "5345" 作为默认值。
+	if port == "" {
+		port = "5345"
+	}
+	// 构造监听地址，格式为 ":<port>"
+	listenAddr := fmt.Sprintf(":%s", port)
+	// --- END of ADDED Code ---
+
 	// WebSocket 路由
 	http.HandleFunc(wsPath, handleWebSocket)
 
 	// HTTP 反向代理路由 (捕获所有其他请求)
 	http.HandleFunc("/", handleProxyRequest)
 
-	log.Printf("Starting server on %s", proxyListenAddr)
-	log.Printf("WebSocket endpoint available at ws://%s%s", proxyListenAddr, wsPath)
-	log.Printf("HTTP proxy available at http://%s/", proxyListenAddr)
+	// MODIFIED: Use the new dynamic listenAddr variable
+	log.Printf("Starting server on %s", listenAddr)
+	log.Printf("WebSocket endpoint available at ws://localhost%s%s", listenAddr, wsPath) // Adjusted for clarity
+	log.Printf("HTTP proxy available at http://localhost%s/", listenAddr)               // Adjusted for clarity
 
-	if err := http.ListenAndServe(proxyListenAddr, nil); err != nil {
+	// MODIFIED: Use the new dynamic listenAddr variable
+	if err := http.ListenAndServe(listenAddr, nil); err != nil {
 		log.Fatalf("Could not start server: %s\n", err)
 	}
 }
